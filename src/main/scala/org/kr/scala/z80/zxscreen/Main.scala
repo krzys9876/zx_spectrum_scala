@@ -1,9 +1,9 @@
 package org.kr.scala.z80.zxscreen
 
 import java.awt.Color
-import java.awt.event.ActionEvent
 import java.awt.image.BufferedImage
 import javax.swing.Timer
+import scala.annotation.unused
 import scala.swing.{Frame, Graphics2D, MainFrame, Panel, SimpleSwingApplication}
 import scala.swing.Swing._
 import scala.swing.event.{FocusGained, FocusLost, KeyTyped}
@@ -12,43 +12,51 @@ object Main extends SimpleSwingApplication {
 
   private lazy val ui: Panel = new Panel {
     background = Color.white
-    preferredSize = (500, 400)
+    preferredSize = (1024, 768)
     focusable = true
     listenTo(mouse.clicks, mouse.moves, keys)
 
-    val image:BufferedImage = new BufferedImage(VideoMemory.XPIXELS,VideoMemory.YPIXELS,BufferedImage.TYPE_3BYTE_BGR)
-
-    val videoMemory:VideoMemory=VideoMemory()
-
-    def doPaint(): Unit = {
-      val raster = image.getRaster
-      val blink = (System.currentTimeMillis() & 0x003FF) < 0x0200 // millis modulo 1024 <512
-      raster.setPixels(0, 0, VideoMemory.XPIXELS, VideoMemory.YPIXELS, videoMemory.getColorized(blink))
-    }
+    private val image: BufferedImage = new BufferedImage(VideoMemory.XPIXELS, VideoMemory.YPIXELS, BufferedImage.TYPE_3BYTE_BGR)
+    private val videoMemory: VideoMemory = VideoMemory()
 
     reactions += {
-      case KeyTyped(_, 'r', _, _) => videoMemory.demoRandom()
-      case KeyTyped(_, 'f', _, _) => videoMemory.demoStripes()
-      case KeyTyped(_, 'c', _, _) => videoMemory.demoColors()
-
+      //Demo actions
+      case KeyTyped(_, 'r', _, _) => if(demoTimer.isRunning) demoTimer.stop() else demoTimer.start()
+      case KeyTyped(_, 'f', _, _) =>
+        demoTimer.stop()
+        videoMemory.demoStripes()
+      case KeyTyped(_, 'c', _, _) =>
+        demoTimer.stop()
+        videoMemory.demoColors()
+      //Focus actions
       case _: FocusLost => repaint()
       case _: FocusGained => repaint()
     }
 
-    override def paintComponent(g: Graphics2D): Unit = {
-      super.paintComponent(g)
-      doPaint()
-      val startX=size.width * 1 / 10
-      val startY=size.height * 1 / 10
-      val imgWidth=size.width * 8 / 10
-      val imgHeight=size.height * 8 / 10
-      g.drawImage(image,startX,startY,imgWidth,imgHeight,null)
+    private val BORDER_PERCENT: Int = 10
+
+    private def prepareImage(): Unit = {
+      val raster = image.getRaster
+      val blink = (System.currentTimeMillis() & 0x003FF) < 0x0200 // millis modulo 1023 <512
+      raster.setPixels(0, 0, VideoMemory.XPIXELS, VideoMemory.YPIXELS, videoMemory.getColorized(blink))
     }
 
-    val timer:Timer = new Timer(0, _ => repaint())
-    timer.setRepeats(true)
-    timer.setDelay(50)
-    timer.start()
+    override def paintComponent(g: Graphics2D): Unit = {
+      def imageStartRatio(pixels: Int): Int = pixels * BORDER_PERCENT / 100
+
+      def imageDimensionsRatio(pixels: Int): Int = pixels * (100 - 2 * BORDER_PERCENT) / 100
+
+      super.paintComponent(g)
+      prepareImage()
+      val startX = imageStartRatio(size.width)
+      val startY = imageStartRatio(size.height)
+      val imgWidth = imageDimensionsRatio(size.width)
+      val imgHeight = imageDimensionsRatio(size.height)
+      g.drawImage(image, startX, startY, imgWidth, imgHeight, null)
+    }
+
+    @unused private val refreshTimer: Timer = TimerFactory.started(50, _ => repaint())
+    private val demoTimer: Timer = TimerFactory.stopped(1000, _ => videoMemory.demoRandom())
   }
 
   def top: Frame = new MainFrame {
