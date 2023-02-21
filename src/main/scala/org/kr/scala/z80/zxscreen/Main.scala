@@ -1,4 +1,4 @@
-package org.kr.z80.zxscreen
+package org.kr.scala.z80.zxscreen
 
 import java.awt.Color
 import java.awt.event.{ActionEvent, ActionListener}

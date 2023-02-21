@@ -1,4 +1,4 @@
-package org.kr.z80.zxscreen;
+package org.kr.scala.z80.zxscreen;
 
 /**
  * Mutable video data arrays used for translation of ZX Spectrum raw screen memory to RGB image

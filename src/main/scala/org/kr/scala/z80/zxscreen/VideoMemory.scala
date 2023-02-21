@@ -1,6 +1,6 @@
-package org.kr.z80.zxscreen
+package org.kr.scala.z80.zxscreen
 
-import org.kr.z80.zxscreen.VideoMemory.MEMSIZE
+import VideoMemory.MEMSIZE
 
 import java.awt.Color
 import scala.util.Random

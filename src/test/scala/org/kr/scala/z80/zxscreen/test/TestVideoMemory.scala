@@ -1,6 +1,6 @@
-package org.kr.z80.zxscreen.test
+package org.kr.scala.z80.zxscreen.test
 
-import org.kr.z80.zxscreen.VideoMemory
+import org.kr.scala.z80.zxscreen.VideoMemory
 import org.scalatest.GivenWhenThen
 import org.scalatest.featurespec.AnyFeatureSpec
 
