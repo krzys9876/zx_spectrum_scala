@@ -1,7 +1,7 @@
 package org.kr.scala.z80.zxscreen
 
 import java.awt.Color
-import java.awt.event.{ActionEvent, ActionListener}
+import java.awt.event.ActionEvent
 import java.awt.image.BufferedImage
 import javax.swing.Timer
 import scala.swing.{Frame, Graphics2D, MainFrame, Panel, SimpleSwingApplication}
@@ -45,9 +45,7 @@ object Main extends SimpleSwingApplication {
       g.drawImage(image,startX,startY,imgWidth,imgHeight,null)
     }
 
-    val timer:Timer = new Timer(0, new ActionListener {
-      override def actionPerformed(e: ActionEvent): Unit = repaint()
-    })
+    val timer:Timer = new Timer(0, _ => repaint())
     timer.setRepeats(true)
     timer.setDelay(50)
     timer.start()
