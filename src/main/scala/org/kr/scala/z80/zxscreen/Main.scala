@@ -28,6 +28,9 @@ object Main extends SimpleSwingApplication {
       case KeyTyped(_, 'c', _, _) =>
         demoTimer.stop()
         videoMemory.demoColors()
+      case KeyTyped(_, 'b', _, _) =>
+        demoTimer.stop()
+        videoMemory.demoClear()
       //Focus actions
       case _: FocusLost => repaint()
       case _: FocusGained => repaint()
@@ -56,7 +59,7 @@ object Main extends SimpleSwingApplication {
     }
 
     @unused private val refreshTimer: Timer = TimerFactory.started(50, _ => repaint())
-    private val demoTimer: Timer = TimerFactory.stopped(1000, _ => videoMemory.demoRandom())
+    private val demoTimer: Timer = TimerFactory.stopped(150, _ => videoMemory.demoRandom())
   }
 
   def top: Frame = new MainFrame {

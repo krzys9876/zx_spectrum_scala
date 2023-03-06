@@ -82,6 +82,10 @@ case class VideoMemory() {
     for (addr <- 0 until VideoMemory.MEMCHARS) poke(addr + 0x4000 + VideoMemory.MEMPIXELS, 0x10)
   }
 
+  def demoClear(): Unit = {
+    for (addr <- 0 until VideoMemory.MEMSIZE) poke(addr + 0x4000, 0x00)
+  }
+
   def demoRandom(): Unit =
     repeat(10000) {
       val rnd = Random.nextInt(VideoMemory.MEMSIZE) + 0x4000
