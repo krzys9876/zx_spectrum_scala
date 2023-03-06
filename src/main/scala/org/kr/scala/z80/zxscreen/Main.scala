@@ -60,6 +60,8 @@ object Main extends SimpleSwingApplication {
 
     @unused private val refreshTimer: Timer = TimerFactory.started(50, _ => repaint())
     private val demoTimer: Timer = TimerFactory.stopped(150, _ => videoMemory.demoRandom())
+
+    val sim=new Simulator(videoMemory)
   }
 
   def top: Frame = new MainFrame {

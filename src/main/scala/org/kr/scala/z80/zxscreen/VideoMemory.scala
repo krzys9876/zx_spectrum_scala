@@ -16,10 +16,8 @@ case class VideoMemory() {
     }
   }
 
-  private def drawPixelsFromMemory(videoAddr: Int, value: Int): Unit = {
+  private def drawPixelsFromMemory(videoAddr: Int, value: Int): Unit =
     if (videoAddr < VideoMemory.MEMPIXELS) setPixels(videoAddr, value)
-    //else if(videoAddr<VideoMemory.MEMSIZE) setColors(videoAddr,value)
-  }
 
   private def setPixels(videoAddr: Int, value: Int): Unit = {
     val xChar = getXChar(videoAddr)
