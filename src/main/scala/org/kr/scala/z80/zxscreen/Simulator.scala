@@ -16,11 +16,12 @@ class Simulator(val video:VideoMemory) {
 
 
   //implicit val debugger: Debugger = ConsoleDebugger
-  implicit val debugger: Debugger = DummyDebugger
-  //implicit val debugger: Debugger = ConsoleDetailedDebugger
+  //implicit val debugger: Debugger = DummyDebugger
+  implicit val debugger: Debugger = ConsoleDetailedDebugger
   implicit val memoryHandler: MemoryHandler = new MutableZXMemoryHandler(video)
   val memory=prepareMemory
-  val initSystem=new Z80System(memory,Register.blank,OutputFile.blank,prepareInput2,0, Z80System.use8BitIOPorts,CyclicInterrupt.every20ms)
+  val initSystem=new Z80System(memory,Register.blank,OutputFile.blank,prepareInput2,0, Z80System.use8BitIOPorts,NoInterrupt())
+    //,CyclicInterrupt.every20ms)
 
   import ExecutionContext.Implicits._
   val after=Future(StateWatcher[Z80System](initSystem) >>== Z80System.run(debugger)(Long.MaxValue))
@@ -28,8 +29,8 @@ class Simulator(val video:VideoMemory) {
 
   private def prepareMemory(implicit memoryHandler: MemoryHandler): MemoryContents =
     (StateWatcher(memoryHandler.blank(0x10000)) >>==
-      MutableMemory.loadHexLines(readFile(hexFile)) >>==
-      MutableMemory.lockTo(0x2000))
+      memoryHandler.loadHexLines(readFile(hexFile)) >>==
+      memoryHandler.lockTo(0x4000))
       .state
 
   private def readTextFile(inputTextFile: String): List[String] =
