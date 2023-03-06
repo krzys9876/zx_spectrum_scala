@@ -8,20 +8,19 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 class Simulator(val video:VideoMemory) {
-  val CONTROL_PORT = PortID(0xF7) // PortID(0xB1)
-  val DATA_PORT = PortID(0xF5) //PortID(0xB0)
+  val CONTROL_PORT = PortID(0xB1)
+  val DATA_PORT = PortID(0xB0)
 
   val hexFile="input-files\\zx82_rom_KR_mod01.hex"
   //val hexFile="input-files\\basicall_KR_simpleIO.hex"
 
 
   //implicit val debugger: Debugger = ConsoleDebugger
-  //implicit val debugger: Debugger = DummyDebugger
-  implicit val debugger: Debugger = ConsoleDetailedDebugger
+  implicit val debugger: Debugger = DummyDebugger
+  //implicit val debugger: Debugger = ConsoleDetailedDebugger
   implicit val memoryHandler: MemoryHandler = new MutableZXMemoryHandler(video)
   val memory=prepareMemory
-  val initSystem=new Z80System(memory,Register.blank,OutputFile.blank,prepareInput2,0, Z80System.use8BitIOPorts,NoInterrupt())
-    //,CyclicInterrupt.every20ms)
+  val initSystem=new Z80System(memory,Register.blank,OutputFile.blank,prepareInput2,0, Z80System.use8BitIOPorts,CyclicInterrupt.every20ms)
 
   import ExecutionContext.Implicits._
   val after=Future(StateWatcher[Z80System](initSystem) >>== Z80System.run(debugger)(Long.MaxValue))
@@ -31,6 +30,7 @@ class Simulator(val video:VideoMemory) {
     (StateWatcher(memoryHandler.blank(0x10000)) >>==
       memoryHandler.loadHexLines(readFile(hexFile)) >>==
       memoryHandler.lockTo(0x4000))
+      //memoryHandler.lockTo(0x2000))
       .state
 
   private def readTextFile(inputTextFile: String): List[String] =
@@ -54,9 +54,7 @@ class Simulator(val video:VideoMemory) {
     val consolePort = new InputPortConstant(0)
     val controlPort = new InputPortConstant(1)
     InputFile.blank
-      .attachPort(CONTROL_PORT, controlPort)
-      .attachPort(DATA_PORT, consolePort)
-      .attachPort(PortID(0xFE), new InputPortConstant(0x1F))
+      .attachPort(PortID(0xFE), new InputPortConstant(0xFF))
   }
 
 }
