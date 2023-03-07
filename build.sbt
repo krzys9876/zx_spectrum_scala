@@ -1,4 +1,4 @@
-ThisBuild / version := "0.1.1"
+ThisBuild / version := "0.1.2"
 
 ThisBuild / scalaVersion := "2.13.10"
 
@@ -7,6 +7,6 @@ organization := "org.kr.scala"
 
 libraryDependencies ++= Seq(
   "org.scala-lang.modules" %% "scala-swing" % "2.1.1",
-  "io.github.krzys9876" %% "z80_sim" % "0.0.6",
+  "io.github.krzys9876" %% "z80_sim" % "0.0.9",
   "org.scalatest" %% "scalatest" % "3.2.15" % Test
 )
