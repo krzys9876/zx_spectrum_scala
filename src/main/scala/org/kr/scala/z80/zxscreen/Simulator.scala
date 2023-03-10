@@ -20,7 +20,7 @@ class Simulator(val video:VideoMemory) {
   implicit val memoryHandler: MemoryHandler = new MutableZXMemoryHandler(video)
   private val memory=prepareMemory
   val inputPort=new InputPortZXKey
-  private val initSystem=new Z80System(memory,Register.blank.set(Regs.SP,0xFFFF),prepareOutput,prepareInput(inputPort),0,CyclicInterrupt.every20ms)
+  private val initSystem=new Z80System(memory,Register.blank,prepareOutput,prepareInput(inputPort),0,CyclicInterrupt.every20ms)
 
   import ExecutionContext.Implicits._
   Future(StateWatcher[Z80System](initSystem) >>== Z80System.run(debugger)(Long.MaxValue))
