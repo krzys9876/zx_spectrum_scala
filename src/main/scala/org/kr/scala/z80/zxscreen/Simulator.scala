@@ -168,7 +168,7 @@ object ZXKeyCoords {
   )
 }
 
-// ZX has a universal IO port: 0xFE. Outputting bits 3-5 sets border color
+// ZX has a universal IO port: 0xFE. Outputting bits 0-2 sets border color
 class ZXOutputPort(videoMemory: VideoMemory) extends OutputPort(Vector()) {
   override def put(value: Int): ZXOutputPort = {
     videoMemory.setColor(value)
