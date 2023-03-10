@@ -3,10 +3,9 @@ package org.kr.scala.z80.zxscreen
 import org.kr.scala.z80.system.{CyclicInterrupt, Debugger, DummyDebugger, InputFile, InputPort, InputPortConsole, InputPortControlConsole, MemoryContents, MemoryHandler, MutableMemory, OutputFile, PortID, Register, StateWatcher, Z80System}
 import org.kr.scala.z80.utils.Z80Utils
 
-import java.nio.file.{Files, Path}
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.io.Source
 import scala.swing.event.Key
 import scala.swing.event.Key.{Modifier, Modifiers}
 
@@ -14,52 +13,29 @@ class Simulator(val video:VideoMemory) {
   private val CONTROL_PORT = PortID(0xB1)
   private val DATA_PORT = PortID(0xB0)
 
-  val hexFile="input-files\\zx82_rom_KR_orig.hex"
-  //val hexFile="input-files\\zx82_rom_KR_mod01.hex"
-  //val hexFile="input-files\\basicall_KR_simpleIO.hex"
-
   //implicit val debugger: Debugger = ConsoleDebugger
   implicit val debugger: Debugger = DummyDebugger
   //implicit val debugger: Debugger = ConsoleDetailedDebugger
   implicit val memoryHandler: MemoryHandler = new MutableZXMemoryHandler(video)
   private val memory=prepareMemory
   val inputPort=new InputPortZXKey
-  val initSystem=new Z80System(memory,Register.blank,OutputFile.blank,prepareInput2(inputPort),0,CyclicInterrupt.every20ms)
+  private val initSystem=new Z80System(memory,Register.blank,OutputFile.blank,prepareInput(inputPort),0,CyclicInterrupt.every20ms)
 
   import ExecutionContext.Implicits._
   Future(StateWatcher[Z80System](initSystem) >>== Z80System.run(debugger)(Long.MaxValue))
 
-
   private def prepareMemory(implicit memoryHandler: MemoryHandler): MemoryContents =
     (StateWatcher(memoryHandler.blank(0x10000)) >>==
-      memoryHandler.loadHexLines(readFile(hexFile)) >>==
+      memoryHandler.loadHexLines(readHexFile) >>==
       memoryHandler.lockTo(0x4000))
-      //memoryHandler.lockTo(0x2000))
       .state
 
-  private def readTextFile(inputTextFile: String): List[String] =
-    if (inputTextFile.nonEmpty) readFile(inputTextFile)
-    else List()
+  private def readHexFile: List[String] =
+    Source.fromResource("zx82_rom_KR_orig.hex").getLines().toList
 
-  private def readFile(fullFileWithPath: String): List[String] =
-    Files.readAllLines(Path.of(fullFileWithPath)).asScala.toList
-
-  private def prepareInput: InputFile = {
-    val inputLines = readTextFile("input-files\\fillmem.txt")
-    val chars = if (inputLines.nonEmpty) inputLines.foldLeft("")((fullString, line) => fullString + line + "\r") else ""
-    val consolePort = new InputPortConsole(chars.toCharArray)
-    val controlPort=new InputPortControlConsole(consolePort)
+  private def prepareInput(port:InputPort): InputFile =
     InputFile.blank
-      .attachPort(CONTROL_PORT, controlPort)
-      .attachPort(DATA_PORT, consolePort)
-  }
-
-  private def prepareInput2(port:InputPort): InputFile = {
-    InputFile.blank
-      //.attachPort(PortID(0xFE), new InputPortConstant(0x30))
       .attachPort(PortID(0xFE),port)
-  }
-
 }
 
 class MutableZXMemoryHandler(val video:VideoMemory) extends MemoryHandler {
@@ -130,7 +106,6 @@ object InputPortZXKey {
 case class ZXKeyCoords(inputBit:Int,outputBit:Int)
 
 object ZXKeyCoords {
-  //rows:
   val keysMap:Map[Key.Value,ZXKeyCoords] = Map(
     Key.Key1->ZXKeyCoords(3,0),
     Key.Key2->ZXKeyCoords(3,1),
