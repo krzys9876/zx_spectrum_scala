@@ -62,6 +62,10 @@ object Main extends SimpleSwingApplication {
       val startY = imageStartRatio(size.height)
       val imgWidth = imageDimensionsRatio(size.width)
       val imgHeight = imageDimensionsRatio(size.height)
+      if(g.getBackground!=videoMemory.data.border) {
+        g.setBackground(videoMemory.data.border)
+        g.clearRect(0,0,size.width,size.height)
+      }
       g.drawImage(image, startX, startY, imgWidth, imgHeight, null)
     }
 

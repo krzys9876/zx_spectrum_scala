@@ -9,10 +9,16 @@ case class VideoMemory() {
   val data: VideoData = new VideoData(VideoMemory.MEMSIZE, VideoMemory.PIXELS * 3)
 
   def poke(addr: Int, value: Int): Unit = {
-    val actualAddr = addr - 0x4000
-    if (actualAddr >= 0 && actualAddr < MEMSIZE && value >= 0 && value <= 255) {
-      data.raw(actualAddr) = value.toByte
-      drawPixelsFromMemory(actualAddr, value)
+    assert(value>=0 && value<=255)
+    val relative = addr - 0x4000
+    relative match {
+      case a if a >= 0 && a < MEMSIZE =>
+        data.raw(a) = value.toByte
+        drawPixelsFromMemory(a, value)
+      case a if a == 0x1C48 => //0x5C48 is the actual location
+        val actualColorCode = value >> 3 & 0x07
+        data.border = VideoMemory.colors.getOrElse(actualColorCode,Color.WHITE)
+      case _ =>
     }
   }
 

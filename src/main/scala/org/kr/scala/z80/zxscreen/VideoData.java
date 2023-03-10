@@ -1,5 +1,7 @@
 package org.kr.scala.z80.zxscreen;
 
+import java.awt.*;
+
 /**
  * Mutable video data arrays used for translation of ZX Spectrum raw screen memory to RGB image
  */
@@ -16,6 +18,14 @@ public class VideoData {
      * Colorized RGB pixels with standard (X,Y) layout
      */
     public int[] colorized;
+    /**
+     * Background color
+     */
+    public Color border= Color.lightGray;
+
+    /**
+     * Create blank memory data
+     */
     VideoData(int rawSize, int pixelsSize) {
         raw=new byte[rawSize];
         mask=new boolean[pixelsSize];

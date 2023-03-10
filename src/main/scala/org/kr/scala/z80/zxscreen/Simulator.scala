@@ -11,8 +11,8 @@ import scala.swing.event.Key
 import scala.swing.event.Key.{Modifier, Modifiers}
 
 class Simulator(val video:VideoMemory) {
-  val CONTROL_PORT = PortID(0xB1)
-  val DATA_PORT = PortID(0xB0)
+  private val CONTROL_PORT = PortID(0xB1)
+  private val DATA_PORT = PortID(0xB0)
 
   val hexFile="input-files\\zx82_rom_KR_orig.hex"
   //val hexFile="input-files\\zx82_rom_KR_mod01.hex"
@@ -22,12 +22,12 @@ class Simulator(val video:VideoMemory) {
   implicit val debugger: Debugger = DummyDebugger
   //implicit val debugger: Debugger = ConsoleDetailedDebugger
   implicit val memoryHandler: MemoryHandler = new MutableZXMemoryHandler(video)
-  val memory=prepareMemory
+  private val memory=prepareMemory
   val inputPort=new InputPortZXKey
   val initSystem=new Z80System(memory,Register.blank,OutputFile.blank,prepareInput2(inputPort),0,CyclicInterrupt.every20ms)
 
   import ExecutionContext.Implicits._
-  val after=Future(StateWatcher[Z80System](initSystem) >>== Z80System.run(debugger)(Long.MaxValue))
+  Future(StateWatcher[Z80System](initSystem) >>== Z80System.run(debugger)(Long.MaxValue))
 
 
   private def prepareMemory(implicit memoryHandler: MemoryHandler): MemoryContents =
