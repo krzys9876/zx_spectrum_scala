@@ -1,8 +1,9 @@
 package org.kr.scala.z80.zxscreen
 
-import org.kr.scala.z80.system.{CyclicInterrupt, Debugger, DummyDebugger, InputFile, InputPort, InputPortConsole, InputPortControlConsole, MemoryContents, MemoryHandler, MutableMemory, OutputFile, PortID, Register, StateWatcher, Z80System}
+import org.kr.scala.z80.system.{ConsoleDebugger, ConsoleDetailedDebugger, CyclicInterrupt, Debugger, DummyDebugger, InputFile, InputPort, InputPortConsole, InputPortControlConsole, InputPortMultiple, MemoryContents, MemoryHandler, MutableMemory, OutputFile, OutputPort, PortID, Register, Regs, StateWatcher, Z80System}
 import org.kr.scala.z80.utils.Z80Utils
 
+import java.nio.file.{Files, Path}
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
@@ -10,16 +11,16 @@ import scala.swing.event.Key
 import scala.swing.event.Key.{Modifier, Modifiers}
 
 class Simulator(val video:VideoMemory) {
-  private val CONTROL_PORT = PortID(0xB1)
-  private val DATA_PORT = PortID(0xB0)
+  private val CONTROL_PORT = PortID(0xF7)
+  private val DATA_PORT = PortID(0xF5)
 
-  //implicit val debugger: Debugger = ConsoleDebugger
-  implicit val debugger: Debugger = DummyDebugger
+  implicit val debugger: Debugger = ZXConsoleDebugger
+  //implicit val debugger: Debugger = DummyDebugger
   //implicit val debugger: Debugger = ConsoleDetailedDebugger
   implicit val memoryHandler: MemoryHandler = new MutableZXMemoryHandler(video)
   private val memory=prepareMemory
   val inputPort=new InputPortZXKey
-  private val initSystem=new Z80System(memory,Register.blank,OutputFile.blank,prepareInput(inputPort),0,CyclicInterrupt.every20ms)
+  private val initSystem=new Z80System(memory,Register.blank.set(Regs.SP,0xFFFF),prepareOutput,prepareInput(inputPort),0,CyclicInterrupt.every20ms)
 
   import ExecutionContext.Implicits._
   Future(StateWatcher[Z80System](initSystem) >>== Z80System.run(debugger)(Long.MaxValue))
@@ -31,11 +32,28 @@ class Simulator(val video:VideoMemory) {
       .state
 
   private def readHexFile: List[String] =
-    Source.fromResource("zx82_rom_KR_orig.hex").getLines().toList
+    Source.fromResource("zx82_rom_KR_mod08_simpleIO.hex").getLines().toList
 
-  private def prepareInput(port:InputPort): InputFile =
+  private def prepareInput(port:InputPort): InputFile = {
+    val tapFileContent=readTapFile("input-files\\KL.tap")
+    val dataPort = new InputPortMultiple(tapFileContent)
+    val controlPort = new InputPortMultiple(List.fill(tapFileContent.size)(1))
     InputFile.blank
       .attachPort(PortID(0xFE),port)
+      .attachPort(Simulator.DATA_PORT,dataPort)
+      .attachPort(Simulator.CONTROL_PORT,controlPort)
+  }
+
+  private def prepareOutput: OutputFile =
+    new OutputFile(Map(PortID(0xFE)->new OutputPortSilent))
+
+  private def readTapFile(file:String):List[Int]=
+    Files.readAllBytes(Path.of(file)).map(b=>Z80Utils.add8bit(b,0)).toList
+}
+
+object Simulator {
+  val CONTROL_PORT: PortID = PortID(0xF7)
+  val DATA_PORT: PortID = PortID(0xF5)
 }
 
 class MutableZXMemoryHandler(val video:VideoMemory) extends MemoryHandler {
@@ -148,4 +166,20 @@ object ZXKeyCoords {
     Key.Control -> ZXKeyCoords(7, 1),
     Key.Space -> ZXKeyCoords(7, 0),
   )
+}
+
+class OutputPortSilent() extends OutputPort(Vector()) {
+  override def put(value:Int)= this
+  override val size:Int=0
+  override def apply(pos:Int):Int=0
+}
+
+object ZXConsoleDebugger extends Debugger {
+  override def info[Watched](before:Watched,after:Watched):Unit= {
+    after match {
+      // output only to data port
+      case outFile:OutputFile if outFile.lastPort==Simulator.DATA_PORT => print(outFile.lastValue.toChar)
+      case _ =>
+    }
+  }
 }
