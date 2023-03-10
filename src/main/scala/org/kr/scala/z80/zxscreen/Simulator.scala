@@ -1,6 +1,6 @@
 package org.kr.scala.z80.zxscreen
 
-import org.kr.scala.z80.system.{ConsoleDebugger, ConsoleDetailedDebugger, CyclicInterrupt, Debugger, DummyDebugger, InputFile, InputPort, InputPortConsole, InputPortControlConsole, InputPortMultiple, MemoryContents, MemoryHandler, MutableMemory, OutputFile, OutputPort, PortID, Register, Regs, StateWatcher, Z80System}
+import org.kr.scala.z80.system.{ConsoleDebugger, ConsoleDetailedDebugger, CyclicInterrupt, Debugger, DummyDebugger, InputFile, InputPort, InputPortConsole, InputPortControlConsole, InputPortMultiple, InterruptInfo, MemoryContents, MemoryHandler, MutableMemory, OutputFile, OutputPort, PortID, Register, Regs, StateWatcher, Z80System}
 import org.kr.scala.z80.utils.Z80Utils
 
 import java.nio.file.{Files, Path}
@@ -20,7 +20,7 @@ class Simulator(val video:VideoMemory) {
   implicit val memoryHandler: MemoryHandler = new MutableZXMemoryHandler(video)
   private val memory=prepareMemory
   val inputPort=new InputPortZXKey
-  private val initSystem=new Z80System(memory,Register.blank,prepareOutput,prepareInput(inputPort),0,CyclicInterrupt.every20ms)
+  private val initSystem=new Z80System(memory,Register.blank,prepareOutput,prepareInput(inputPort),0,StrictCyclicInterrupt())
 
   import ExecutionContext.Implicits._
   Future(StateWatcher[Z80System](initSystem) >>== Z80System.run(debugger)(Long.MaxValue))
@@ -45,7 +45,7 @@ class Simulator(val video:VideoMemory) {
   }
 
   private def prepareOutput: OutputFile =
-    new OutputFile(Map(PortID(0xFE)->new OutputPortSilent))
+    new OutputFile(Map(PortID(0xFE)->new ZXOutputPort(video)))
 
   private def readTapFile(file:String):List[Int]=
     Files.readAllBytes(Path.of(file)).map(b=>Z80Utils.add8bit(b,0)).toList
@@ -168,8 +168,12 @@ object ZXKeyCoords {
   )
 }
 
-class OutputPortSilent() extends OutputPort(Vector()) {
-  override def put(value:Int)= this
+// ZX has a universal IO port: 0xFE. Outputting bits 3-5 sets border color
+class ZXOutputPort(videoMemory: VideoMemory) extends OutputPort(Vector()) {
+  override def put(value: Int): ZXOutputPort = {
+    videoMemory.setColor(value)
+    this
+  }
   override val size:Int=0
   override def apply(pos:Int):Int=0
 }
@@ -182,4 +186,32 @@ object ZXConsoleDebugger extends Debugger {
       case _ =>
     }
   }
+}
+
+case class StrictCyclicInterrupt(toGo:Long,lastTCycles:Long,lastTick:Long) extends InterruptInfo {
+  // trigger only if interrupts are enabled
+  override def trigger(system:Z80System):Boolean = system.getRegValue(Regs.IFF)==1 && toGo<0
+
+  // always cycle - even if interrupts are disabled (normally interrupts are generated externally to the system)
+  override def refresh(system: Z80System): StrictCyclicInterrupt = {
+    val step = system.elapsedTCycles - lastTCycles
+    val (newToGo,newTick) = toGo match {
+      case negativeToGo if negativeToGo<0 =>
+        System.currentTimeMillis() - lastTick  match {
+          case waitMillis if waitMillis < StrictCyclicInterrupt.MILLIS && waitMillis>0 =>
+            Thread.sleep(StrictCyclicInterrupt.MILLIS-waitMillis)
+          case _ =>
+        }
+        (toGo - step + StrictCyclicInterrupt.TCYCLES,System.currentTimeMillis())
+      case otherToGo => (otherToGo - step,lastTick)
+    }
+    new StrictCyclicInterrupt(newToGo, system.elapsedTCycles, newTick)
+  }
+}
+
+object StrictCyclicInterrupt {
+  val MILLIS:Long=20
+  val TCYCLES:Long=Z80System.REFERENCE_CYCLES_20ms
+
+  def apply():StrictCyclicInterrupt = new StrictCyclicInterrupt(TCYCLES,TCYCLES,System.currentTimeMillis())
 }
