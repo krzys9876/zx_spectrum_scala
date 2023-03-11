@@ -26,7 +26,7 @@ class MainApp(val args:Array[String]) extends SimpleSwingApplication {
 
     private val image: BufferedImage = new BufferedImage(VideoMemory.XPIXELS, VideoMemory.YPIXELS, BufferedImage.TYPE_3BYTE_BGR)
     private val videoMemory: VideoMemory = VideoMemory()
-    val sim=new Simulator(videoMemory,cmdLineArgs.waitMs(),cmdLineArgs.tapFile())
+    val sim=new Simulator(videoMemory,cmdLineArgs.waitMs(),cmdLineArgs.tapFile(),cmdLineArgs.saveTapPrefix(),cmdLineArgs.saveTapTimestamp())
 
     reactions += {
       //Demo actions

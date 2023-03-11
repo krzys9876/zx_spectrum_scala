@@ -3,7 +3,9 @@ package org.kr.scala.z80.zxscreen
 import org.kr.scala.z80.system.{ConsoleDebugger, ConsoleDetailedDebugger, CyclicInterrupt, Debugger, DummyDebugger, InputFile, InputPort, InputPortConsole, InputPortControlConsole, InputPortMultiple, InterruptInfo, MemoryContents, MemoryHandler, MutableMemory, OutputFile, OutputPort, PortID, Register, Regs, StateWatcher, Z80System}
 import org.kr.scala.z80.utils.Z80Utils
 
-import java.nio.file.{Files, Path}
+import java.nio.file.{Files, OpenOption, Path, StandardOpenOption}
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
@@ -11,9 +13,10 @@ import scala.swing.event.Key
 import scala.swing.event.Key.{Modifier, Modifiers}
 import scala.util.{Failure, Success, Try}
 
-class Simulator(val video:VideoMemory,val waitMs:Int,val tapFile:String) {
+class Simulator(val video:VideoMemory,val waitMs:Int,val tapFile:String, saveTapPrefix:String, saveTapTimestamp:Boolean) {
   private val CONTROL_PORT = PortID(0xF7)
   private val DATA_PORT = PortID(0xF5)
+  private val DATA_PORT_BINARY = PortID(0xF3)
 
   implicit val debugger: Debugger = ZXConsoleDebugger
   //implicit val debugger: Debugger = DummyDebugger
@@ -46,7 +49,10 @@ class Simulator(val video:VideoMemory,val waitMs:Int,val tapFile:String) {
   }
 
   private def prepareOutput: OutputFile =
-    new OutputFile(Map(PortID(0xFE)->new ZXOutputPort(video)))
+    new OutputFile(Map(
+      PortID(0xFE)->new ZXOutputPort(video),
+      DATA_PORT_BINARY->new ZXOutputFilePort(saveTapPrefix,saveTapTimestamp)
+    ))
 
   private def readTapFile:List[Int]=
     Try[List[Int]]{Files.readAllBytes(Path.of(tapFile)).map(b=>Z80Utils.add8bit(b,0)).toList} match {
@@ -184,6 +190,24 @@ class ZXOutputPort(videoMemory: VideoMemory) extends OutputPort(Vector()) {
   }
   override val size:Int=0
   override def apply(pos:Int):Int=0
+}
+
+class ZXOutputFilePort(prefix:String,addTimestamp:Boolean) extends OutputPort(Vector()) {
+  private val fileName:String = prefix +
+    (if(addTimestamp) DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS").format(LocalDateTime.now)
+    else "")
+  private val file:Path=Path.of(fileName)
+  private def ensureFileExists():Unit = if(!Files.exists(file)) Files.write(file,Array[Byte](),StandardOpenOption.CREATE)
+  private def write(byteValue:Byte):Unit = {
+    ensureFileExists()
+    Files.write(file,Array(byteValue),StandardOpenOption.APPEND)
+  }
+  override def put(value: Int): ZXOutputFilePort = {
+    write(Z80Utils.add8bit(value,0).toByte)
+    this
+  }
+  override val size: Int = 0
+  override def apply(pos: Int): Int = 0
 }
 
 object ZXConsoleDebugger extends Debugger {
