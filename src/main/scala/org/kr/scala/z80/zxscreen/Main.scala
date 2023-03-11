@@ -1,5 +1,7 @@
 package org.kr.scala.z80.zxscreen
 
+import org.kr.scala.z80.zxscreen.utils.Args
+
 import java.awt.Color
 import java.awt.image.BufferedImage
 import javax.swing.Timer
@@ -8,8 +10,14 @@ import scala.swing.{Frame, Graphics2D, MainFrame, Panel, SimpleSwingApplication}
 import scala.swing.Swing._
 import scala.swing.event.{FocusGained, FocusLost, Key, KeyPressed, KeyReleased}
 
-object Main extends SimpleSwingApplication {
+object Main {
+  def main(args: Array[String]): Unit = {
+    new MainApp(args).main(Array())
+  }
+}
 
+class MainApp(val args:Array[String]) extends SimpleSwingApplication {
+  val cmdLineArgs=new Args(args)
   private lazy val ui: Panel = new Panel {
     background = Color.white
     preferredSize = (640, 480)
@@ -18,7 +26,7 @@ object Main extends SimpleSwingApplication {
 
     private val image: BufferedImage = new BufferedImage(VideoMemory.XPIXELS, VideoMemory.YPIXELS, BufferedImage.TYPE_3BYTE_BGR)
     private val videoMemory: VideoMemory = VideoMemory()
-    val sim=new Simulator(videoMemory)
+    val sim=new Simulator(videoMemory,cmdLineArgs.waitMs(),cmdLineArgs.tapFile())
 
     reactions += {
       //Demo actions
@@ -74,7 +82,7 @@ object Main extends SimpleSwingApplication {
   }
 
   def top: Frame = new MainFrame {
-  title = "ZX Spectrum scala simulator"
-  contents = ui
+    title = "ZX Spectrum scala simulator"
+    contents = ui
   }
 }
