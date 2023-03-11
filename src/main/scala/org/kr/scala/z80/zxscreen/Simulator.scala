@@ -193,9 +193,9 @@ class ZXOutputPort(videoMemory: VideoMemory) extends OutputPort(Vector()) {
 }
 
 class ZXOutputFilePort(prefix:String,addTimestamp:Boolean) extends OutputPort(Vector()) {
-  private val fileName:String = prefix +
-    (if(addTimestamp) DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS").format(LocalDateTime.now)
-    else "")
+  private val fileName:String = f"$prefix$timestamp.tap"
+  private def timestamp:String=
+    if(addTimestamp) DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS").format(LocalDateTime.now) else ""
   private val file:Path=Path.of(fileName)
   private def ensureFileExists():Unit = if(!Files.exists(file)) Files.write(file,Array[Byte](),StandardOpenOption.CREATE)
   private def write(byteValue:Byte):Unit = {
