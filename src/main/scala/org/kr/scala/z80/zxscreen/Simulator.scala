@@ -90,10 +90,6 @@ class MutableZXMemoryHandler(val video:VideoMemory) extends MemoryHandler {
     })
     memory.pokeMulti(address, values)
   }
-  override def loadHexLines: List[String] => MemoryContents => MemoryContents = lines => memory => memory.loadHexLines(lines)
-  override def lockTo: Int => MemoryContents => MemoryContents = upperAddressExcl => memory => memory.lock(AddressRange(0, upperAddressExcl))
-  override def lock: AddressRange => MemoryContents => MemoryContents = range => memory => memory.lock(range)
-
   private def videoPoke(address:Int,value:Int):Unit = video.poke(address,value)
 }
 
