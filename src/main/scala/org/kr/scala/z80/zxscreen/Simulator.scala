@@ -1,9 +1,9 @@
 package org.kr.scala.z80.zxscreen
 
-import org.kr.scala.z80.system.{ConsoleDebugger, ConsoleDetailedDebugger, CyclicInterrupt, Debugger, DummyDebugger, InputFile, InputPort, InputPortConsole, InputPortControlConsole, InputPortMultiple, InterruptInfo, MemoryContents, MemoryHandler, MutableMemory, OutputFile, OutputPort, PortID, Register, Regs, StateWatcher, Z80System}
+import org.kr.scala.z80.system._
 import org.kr.scala.z80.utils.Z80Utils
 
-import java.nio.file.{Files, OpenOption, Path, StandardOpenOption}
+import java.nio.file.{Files, Path, StandardOpenOption}
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import scala.collection.mutable
@@ -91,7 +91,8 @@ class MutableZXMemoryHandler(val video:VideoMemory) extends MemoryHandler {
     memory.pokeMulti(address, values)
   }
   override def loadHexLines: List[String] => MemoryContents => MemoryContents = lines => memory => memory.loadHexLines(lines)
-  override def lockTo: Int => MemoryContents => MemoryContents = upperAddressExcl => memory => memory.lockTo(upperAddressExcl)
+  override def lockTo: Int => MemoryContents => MemoryContents = upperAddressExcl => memory => memory.lock(AddressRange(0, upperAddressExcl))
+  override def lock: AddressRange => MemoryContents => MemoryContents = range => memory => memory.lock(range)
 
   private def videoPoke(address:Int,value:Int):Unit = video.poke(address,value)
 }
