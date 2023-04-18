@@ -22,9 +22,10 @@ class Simulator(val video:VideoMemory,val waitMs:Int,val tapFile:String, saveTap
   //implicit val debugger: Debugger = DummyDebugger
   //implicit val debugger: Debugger = ConsoleDetailedDebugger
   implicit val memoryHandler: MemoryHandler = new MutableZXMemoryHandler(video)
+  implicit val registerHandler: RegisterHandler =new MutableRegisterHandler()
   private val memory=prepareMemory
   val inputPort=new InputPortZXKey
-  private val initSystem=new Z80System(memory,Register.blank,prepareOutput,prepareInput(inputPort),0,StrictCyclicInterrupt(waitMs))
+  private val initSystem=new Z80System(memory,registerHandler.blank,prepareOutput,prepareInput(inputPort),0,StrictCyclicInterrupt(waitMs))
 
   import ExecutionContext.Implicits._
   Future(StateWatcher[Z80System](initSystem) >>== Z80System.run(debugger)(Long.MaxValue))
