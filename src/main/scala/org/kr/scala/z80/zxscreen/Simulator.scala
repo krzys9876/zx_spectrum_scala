@@ -14,8 +14,6 @@ import scala.swing.event.Key.{Modifier, Modifiers}
 import scala.util.{Failure, Success, Try}
 
 class Simulator(val video:VideoMemory,val waitMs:Int,val tapFile:String, saveTapPrefix:String, saveTapTimestamp:Boolean) {
-  private val CONTROL_PORT = PortID(0xF7)
-  private val DATA_PORT = PortID(0xF5)
   private val DATA_PORT_BINARY = PortID(0xF3)
 
   implicit val debugger: Debugger = ZXConsoleDebugger
