@@ -23,7 +23,8 @@ class Simulator(val video:VideoMemory,val waitMs:Int,val tapFile:String, saveTap
   implicit val registerHandler: RegisterHandler =new MutableRegisterHandler()
   private val memory=prepareMemory
   val inputPort=new InputPortZXKey
-  private val initSystem=new Z80System(memory,registerHandler.blank,prepareOutput,prepareInput(inputPort),0,StrictCyclicInterrupt(waitMs))
+  private val initSystem=new Z80System(memory,registerHandler.blank,prepareOutput,prepareInput(inputPort),
+    new TCycleCounterMutable(0),StrictCyclicInterrupt(waitMs))
 
   import ExecutionContext.Implicits._
   Future(StateWatcher[Z80System](initSystem) >>== Z80System.run(debugger)(Long.MaxValue))
@@ -222,7 +223,7 @@ case class StrictCyclicInterrupt(toGo:Long,lastTCycles:Long,lastTick:Long,waitMs
 
   // always cycle - even if interrupts are disabled (normally interrupts are generated externally to the system)
   override def refresh(system: Z80System): StrictCyclicInterrupt = {
-    val step = system.elapsedTCycles - lastTCycles
+    val step = system.elapsedTCycles.cycles - lastTCycles
     val (newToGo,newTick) = toGo match {
       case negativeToGo if negativeToGo<0 =>
         System.currentTimeMillis() - lastTick  match {
@@ -233,7 +234,7 @@ case class StrictCyclicInterrupt(toGo:Long,lastTCycles:Long,lastTick:Long,waitMs
         (toGo - step + StrictCyclicInterrupt.TCYCLES,System.currentTimeMillis())
       case otherToGo => (otherToGo - step,lastTick)
     }
-    StrictCyclicInterrupt(newToGo, system.elapsedTCycles, newTick, waitMs)
+    StrictCyclicInterrupt(newToGo, system.elapsedTCycles.cycles, newTick, waitMs)
   }
 }
 
