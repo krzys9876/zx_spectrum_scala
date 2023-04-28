@@ -1,4 +1,4 @@
-# zx_spectrum_scala
+# ZX Spectrum simulator #
 A ZX spectrum emulator in Scala. Uses Z80 processor simulator from [my other project](https://github.com/krzys9876/z80_sim_scala). 
 As you may have heard, ZX Spectrum was extremely simplified computer so the actual simulator needs only:
 * an actual processor with memory
