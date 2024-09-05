@@ -27,7 +27,8 @@ class Simulator(val video:VideoMemory,val waitMs:Int,val tapFile:String, saveTap
     new TCycleCounterMutable(0),StrictCyclicInterrupt(waitMs))
 
   import ExecutionContext.Implicits._
-  Future(StateWatcher[Z80System](initSystem) >>== Z80System.run(debugger)(Long.MaxValue))
+  implicit val stateWatcherHandler: StateWatcherMutableHandler[Z80System] =new StateWatcherMutableHandler[Z80System]
+  Future(stateWatcherHandler.createNewWatcher(initSystem) >>== Z80System.run(debugger,stateWatcherHandler)(Long.MaxValue))
 
   private def prepareMemory(implicit memoryHandler: MemoryHandler): MemoryContents =
     (StateWatcher(memoryHandler.blank(0x10000)) >>==
