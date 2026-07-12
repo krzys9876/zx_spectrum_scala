@@ -3,7 +3,7 @@ package org.kr.scala.z80.zxscreen
 import org.kr.scala.z80.system._
 import org.kr.scala.z80.utils.Z80Utils
 
-import java.nio.file.{Files, Path, StandardOpenOption}
+import java.nio.file.{Files, OpenOption, Path, StandardOpenOption}
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import scala.collection.mutable
@@ -35,6 +35,15 @@ class Simulator(val video:VideoMemory,val waitMs:Int,val tapFile:String, saveTap
       memoryHandler.loadHexLines(readHexFile) >>==
       memoryHandler.lockTo(0x4000))
       .state
+
+  def dumpMemory(fileName: String): Unit = {
+    println(f"Dumping memory to file: $fileName")
+    val memAsText = memory.copy.foldLeft(("",0))((acc, v) => {
+      val txt = (if(Math.floorMod(acc._2, 16)==0) acc._1 + f"\n${acc._2}%04x:" else acc._1) + f" $v%02x"
+      (txt, acc._2+1)
+    })
+    Files.write(Path.of(fileName), memAsText._1.getBytes, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE, StandardOpenOption.WRITE)
+  }
 
   private def readHexFile: List[String] =
     Source.fromResource("zx82_rom_KR_mod08_simpleIO.hex").getLines().toList

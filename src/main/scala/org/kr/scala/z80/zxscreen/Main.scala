@@ -4,6 +4,8 @@ import org.kr.scala.z80.zxscreen.utils.Args
 
 import java.awt.Color
 import java.awt.image.BufferedImage
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import javax.swing.Timer
 import scala.annotation.unused
 import scala.swing.{Frame, Graphics2D, MainFrame, Panel, SimpleSwingApplication}
@@ -40,6 +42,7 @@ class MainApp(val args:Array[String]) extends SimpleSwingApplication {
       case KeyTyped(_, 'b', _, _) =>
         demoTimer.stop()
         videoMemory.demoClear()*/
+      case KeyPressed(_, Key.F12, _, _) => sim.dumpMemory("memory_dump_" + DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss").format(LocalDateTime.now()));
       case KeyPressed(_, key, modifiers, _) =>
         sim.inputPort.addKey(key)
         sim.inputPort.addModifiers(modifiers)
